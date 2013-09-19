@@ -63,10 +63,12 @@ def build_table(num_entries):
 
 def crack(h):
     """returns p (the password) that generates hash h if possible; otherwise
-    return -1 (no such chain found) or -2 (not found in the chain)"""
+    return the number of times chains were found in the table (i.e., the number
+    of false positives"""
     global table
     # find a chain that p is in; otherwise, fail
     chain = None
+    chains_found = 0
     for i in xrange(k, 0, -1):     # count from k down to 1
         _h = h
         for j in xrange(i, k+1):
@@ -75,16 +77,14 @@ def crack(h):
             p = R(_h, j)
         if table.has_key(p):
             chain = table[p]
-            break
-    if chain is None:
-        return -1   # chain not found :(
+            chains_found += 1
+            # a chain was found; now, find p in the chain
+            p = chain[0]
+            for n in xrange(1, k+1):
+                _h = H(p)
+                if _h == h:    # found it!
+                    return p
+                p = R(_h, n)
 
-    # finally, find p in the chain
-    p = chain[0]
-    for i in xrange(1, k+1):
-        _h = H(p)
-        if _h == h:    # found it!
-            return p
-        p = R(_h, i)
-    return -2      # found a chain, but password isn't in it :(
+    return chains_found    # not found
 
